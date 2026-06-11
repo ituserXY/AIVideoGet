@@ -3,8 +3,8 @@ from .douyin import DouyinAdapter
 from .bilibili import BilibiliAdapter
 from .remote import RemoteAdapter
 
-# Priority: platform-specific adapters > RemoteAdapter (media-parser) > Mock fallback
-_ADAPTER_MAP: dict[str, type[BaseAdapter]] = {
+# 专有适配器（真实 API 解析）
+_SPECIFIC: dict[str, type[BaseAdapter]] = {
     "douyin": DouyinAdapter,
     "tiktok": DouyinAdapter,
     "bilibili": BilibiliAdapter,
@@ -12,13 +12,12 @@ _ADAPTER_MAP: dict[str, type[BaseAdapter]] = {
 
 
 def get_adapter(platform: str) -> BaseAdapter:
-    """Get the best adapter for a given platform.
+    """获取平台对应的解析适配器。
 
-    Uses platform-specific adapter if available (e.g. DouyinAdapter),
-    otherwise falls back to RemoteAdapter which calls media-parser.
+    专有适配器 > RemoteAdapter (media-parser 真实解析)
+    所有适配器均不返回 Mock 数据，解析失败直接报错。
     """
-    if platform in _ADAPTER_MAP:
-        return _ADAPTER_MAP[platform]()
+    if platform in _SPECIFIC:
+        return _SPECIFIC[platform]()
 
-    # Fallback to remote adapter for all other platforms
     return RemoteAdapter(platform)

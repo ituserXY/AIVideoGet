@@ -1,7 +1,9 @@
 """
 B站视频解析适配器
-使用 yt-dlp 作为解析引擎
+使用 yt-dlp 作为解析引擎，失败则尝试 media-parser 兜底
 """
+import yt_dlp
+import asyncio
 from .base import BaseAdapter, ParseResult
 
 
@@ -12,28 +14,20 @@ class BilibiliAdapter(BaseAdapter):
         return "bilibili.com" in url.lower() or "b23.tv" in url.lower()
 
     async def parse(self, url: str) -> ParseResult:
-        """解析B站视频，使用 yt-dlp 提取信息。
+        """解析B站视频，优先 yt-dlp，失败走 media-parser。"""
 
-        先尝试 yt-dlp 直接解析，失败则尝试 media-parser 兜底，最后用 Mock。
-        """
+        # 尝试 yt-dlp
         try:
-            return await self._parse_with_ytdlp(url)
+            return await self._parse_ytdlp(url)
         except Exception:
-            from .remote import RemoteAdapter
-            try:
-                remote = RemoteAdapter("bilibili")
-                result = await remote.parse(url)
-                if result.video_url:
-                    return result
-            except Exception:
-                pass
-            from .mock_provider import get_mock_result
-            return get_mock_result(self.platform, url)
+            pass
 
-    async def _parse_with_ytdlp(self, url: str) -> ParseResult:
-        import yt_dlp
-        import asyncio
+        # 兜底 media-parser
+        from .remote import RemoteAdapter
+        remote = RemoteAdapter("bilibili")
+        return await remote.parse(url)
 
+    async def _parse_ytdlp(self, url: str) -> ParseResult:
         def sync_extract():
             ydl_opts = {
                 "quiet": True,
@@ -46,7 +40,6 @@ class BilibiliAdapter(BaseAdapter):
 
         info = await asyncio.to_thread(sync_extract)
 
-        # Get the best video URL
         video_url = ""
         requested = info.get("requested_formats")
         if requested and len(requested) > 0:
@@ -58,6 +51,8 @@ class BilibiliAdapter(BaseAdapter):
                 if f.get("vcodec") and f["vcodec"] != "none" and f.get("url"):
                     video_url = f["url"]
                     break
+        if not video_url:
+            raise ValueError("yt-dlp 未能获取到视频地址")
 
         return ParseResult(
             title=info.get("title", "B站视频"),

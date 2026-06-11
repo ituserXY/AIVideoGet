@@ -1,10 +1,12 @@
+"""
+通用远程解析适配器
+调用 media-parser 服务进行解析，失败则直接报错
+"""
 import httpx
 from .base import BaseAdapter, ParseResult
 
-
 MEDIA_PARSER_URL = "http://127.0.0.1:8051/api/parse"
 
-# Map our platform names to media-parser platform names
 PLATFORM_MAP = {
     "douyin": "抖音",
     "tiktok": "TikTok",
@@ -32,19 +34,28 @@ class RemoteAdapter(BaseAdapter):
 
     async def parse(self, url: str) -> ParseResult:
         cn_name = PLATFORM_MAP.get(self._platform, self._platform)
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                MEDIA_PARSER_URL,
-                json={"text": url},
-            )
-            data = resp.json()
+
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    MEDIA_PARSER_URL,
+                    json={"text": url},
+                )
+                data = resp.json()
+        except Exception as e:
+            raise ValueError(f"解析服务不可用: {e}")
+
+        if not data.get("succ", False):
+            raise ValueError(f"{cn_name} 视频解析失败，请检查链接是否正确")
 
         result = data.get("data", {})
+        if not result.get("video_url"):
+            raise ValueError(f"{cn_name} 视频解析失败，未能获取视频地址")
 
-        # Fall back to mock if media-parser failed or returned no video URL
-        if not data.get("succ", False) or not result.get("video_url"):
-            from .mock_provider import get_mock_result
-            return get_mock_result(self._platform, url)
+        # Normalize author field (media-parser may return dict or string)
+        author = result.get("author") or "未知作者"
+        if isinstance(author, dict):
+            author = author.get("nickname") or author.get("name") or "未知作者"
 
         # Process image_list
         images = []
@@ -55,16 +66,11 @@ class RemoteAdapter(BaseAdapter):
             elif isinstance(img, str):
                 images.append(img)
 
-        # Normalize author field (media-parser may return dict or string)
-        author = result.get("author") or "未知作者"
-        if isinstance(author, dict):
-            author = author.get("nickname") or author.get("name") or "未知作者"
-
         return ParseResult(
             title=result.get("title") or f"{cn_name}视频",
             author=author,
             cover_url=result.get("cover_url") or "",
-            video_url=result.get("video_url") or "",
+            video_url=result.get("video_url"),
             duration=0,
             width=0,
             height=0,

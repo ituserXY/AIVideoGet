@@ -34,14 +34,6 @@ class DouyinAdapter(BaseAdapter):
             return False
 
     async def parse(self, url: str) -> ParseResult:
-        """解析抖音/TikTok 视频，返回无水印视频信息"""
-        try:
-            return await self._real_parse(url)
-        except Exception as e:
-            from .mock_provider import get_mock_result
-            return get_mock_result(self.platform, url)
-
-    async def _real_parse(self, url: str) -> ParseResult:
         import asyncio
 
         def sync_parse():
