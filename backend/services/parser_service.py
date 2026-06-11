@@ -21,8 +21,7 @@ async def parse_video(
         raise ValueError("暂不支持该平台，目前支持：抖音、快手、小红书、B站、微博、西瓜视频")
 
     # Get adapter and parse
-    adapter_cls = get_adapter(platform)
-    adapter = adapter_cls()
+    adapter = get_adapter(platform)
     parsed = await adapter.parse(req.url)
 
     # Save to database

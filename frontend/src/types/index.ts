@@ -7,6 +7,7 @@ export type Platform =
   | 'weibo'
   | 'xigua'
   | 'tiktok'
+  | 'youtube'
 
 export const PLATFORM_INFO: Record<Platform, { name: string; color: string; icon: string }> = {
   douyin:      { name: '抖音',     color: '#000000',   icon: 'douyin' },
@@ -16,6 +17,7 @@ export const PLATFORM_INFO: Record<Platform, { name: string; color: string; icon
   bilibili:    { name: '哔哩哔哩', color: '#00A1D6',   icon: 'bilibili' },
   weibo:       { name: '微博',     color: '#E6162D',   icon: 'weibo' },
   xigua:       { name: '西瓜视频', color: '#EE2C2C',   icon: 'xigua' },
+  youtube:     { name: 'YouTube',  color: '#FF0000',   icon: 'youtube' },
 }
 
 // 用户角色

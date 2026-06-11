@@ -8,6 +8,7 @@ const patterns: Record<Platform, RegExp[]> = {
   bilibili:    [/bilibili\.com/i, /b23\.tv/i],
   weibo:       [/weibo\.com/i, /m\.weibo\.cn/i],
   xigua:       [/xigua\.com/i, /ixigua\.com/i],
+  youtube:     [/youtube\.com/i, /youtu\.be/i],
 }
 
 export function detectPlatform(url: string): Platform | null {

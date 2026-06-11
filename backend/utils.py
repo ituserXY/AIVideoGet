@@ -31,6 +31,7 @@ PLATFORM_PATTERNS: dict[str, list[re.Pattern]] = {
     "bilibili": [re.compile(r"bilibili\.com", re.I), re.compile(r"b23\.tv", re.I)],
     "weibo": [re.compile(r"weibo\.com", re.I), re.compile(r"m\.weibo\.cn", re.I)],
     "xigua": [re.compile(r"xigua\.com", re.I), re.compile(r"ixigua\.com", re.I)],
+    "youtube": [re.compile(r"youtube\.com", re.I), re.compile(r"youtu\.be", re.I)],
 }
 
 

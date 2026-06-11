@@ -1,24 +1,24 @@
-from .base import BaseAdapter, ParseResult
+from .base import BaseAdapter
 from .douyin import DouyinAdapter
-from .kuaishou import KuaishouAdapter
-from .xiaohongshu import XiaohongshuAdapter
 from .bilibili import BilibiliAdapter
-from .weibo import WeiboAdapter
-from .xigua import XiguaAdapter
+from .remote import RemoteAdapter
 
-ADAPTERS: dict[str, type[BaseAdapter]] = {
+# Priority: platform-specific adapters > RemoteAdapter (media-parser) > Mock fallback
+_ADAPTER_MAP: dict[str, type[BaseAdapter]] = {
     "douyin": DouyinAdapter,
-    "tiktok": DouyinAdapter,  # same underlying parser
-    "kuaishou": KuaishouAdapter,
-    "xiaohongshu": XiaohongshuAdapter,
+    "tiktok": DouyinAdapter,
     "bilibili": BilibiliAdapter,
-    "weibo": WeiboAdapter,
-    "xigua": XiguaAdapter,
 }
 
 
-def get_adapter(platform: str) -> type[BaseAdapter]:
-    adapter = ADAPTERS.get(platform)
-    if not adapter:
-        raise ValueError(f"Unsupported platform: {platform}")
-    return adapter
+def get_adapter(platform: str) -> BaseAdapter:
+    """Get the best adapter for a given platform.
+
+    Uses platform-specific adapter if available (e.g. DouyinAdapter),
+    otherwise falls back to RemoteAdapter which calls media-parser.
+    """
+    if platform in _ADAPTER_MAP:
+        return _ADAPTER_MAP[platform]()
+
+    # Fallback to remote adapter for all other platforms
+    return RemoteAdapter(platform)
